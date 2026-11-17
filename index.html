@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Levantamiento Camas Balinesas y Oasis — BREPC</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+<style>
+:root{--navy:#1F3864;--gold:#B08D3E;--beige:#EDE9E6;--ok:#2e7d32;--mtto:#d89a00;--reemp:#c62828;--na:#8a8a8a;--pend:#b9b3ad}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Goudy Old Style",Georgia,serif;background:var(--beige);color:#222}
+header{background:var(--navy);color:#fff;padding:14px 16px;border-bottom:4px solid var(--gold)}
+header h1{margin:0;font-family:"Felix Titling",Georgia,serif;font-size:19px;letter-spacing:1px}
+header .sub{color:#e6d3a8;font-size:14px;margin-top:3px}
+.hdr{display:flex;align-items:center;gap:12px}
+.hdr img{width:62px;height:52px;object-fit:contain;background:#fff;border-radius:8px;padding:3px;flex:none}
+.prog{font-size:12px;margin-top:4px;color:var(--navy)}
+.late{color:var(--reemp);font-weight:bold}
+table.pt{width:100%;border-collapse:collapse;font-size:13px}
+table.pt th{background:var(--navy);color:#fff;text-align:left;padding:6px}
+table.pt td{border-bottom:1px solid #e3ded9;padding:6px}
+#sync{float:right;font-size:12px;padding:3px 8px;border-radius:10px;background:#ffffff22}
+nav{display:flex;background:#fff;border-bottom:1px solid #d6d0ca;position:sticky;top:0;z-index:5}
+nav button{flex:1;border:0;background:none;padding:12px 4px;font:inherit;font-size:15px;color:var(--navy);border-bottom:3px solid transparent;cursor:pointer}
+nav button.on{border-bottom-color:var(--gold);font-weight:bold}
+main{max-width:900px;margin:0 auto;padding:14px}
+.card{background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px #0001}
+h2{font-family:"Felix Titling",Georgia,serif;color:var(--navy);font-size:17px;margin:4px 0 10px}
+h3{color:var(--gold);font-size:15px;margin:16px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+label{display:block;font-size:13px;color:#555;margin:8px 0 3px}
+input,select,textarea{width:100%;padding:9px;border:1px solid #ccc;border-radius:7px;font:inherit;font-size:15px;background:#fff}
+textarea{min-height:44px;resize:vertical}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.btn{border:0;border-radius:7px;padding:10px 14px;font:inherit;font-size:15px;cursor:pointer;background:var(--navy);color:#fff}
+.btn.gold{background:var(--gold)}.btn.light{background:#fff;color:var(--navy);border:1px solid var(--navy)}.btn.red{background:var(--reemp)}
+.btn.sm{padding:6px 10px;font-size:13px}
+.item{border:1px solid #e3ded9;border-radius:9px;padding:10px;margin-bottom:9px}
+.item .t{font-weight:bold;color:var(--navy);margin-bottom:7px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:7px}
+.chip{border:1px solid #bbb;background:#fff;border-radius:16px;padding:6px 11px;font:inherit;font-size:13px;cursor:pointer}
+.chip.on{color:#fff;border-color:transparent}
+.thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.thumbs div{position:relative}
+.thumbs img{width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid #ccc}
+.thumbs b{position:absolute;top:-6px;right:-6px;background:var(--reemp);color:#fff;border-radius:50%;width:20px;height:20px;text-align:center;line-height:19px;font-size:13px;cursor:pointer}
+.photo-btn{display:inline-block;font-size:13px;color:var(--navy);border:1px dashed var(--navy);border-radius:7px;padding:6px 10px;cursor:pointer;margin-top:6px}
+.photo-btn input{display:none}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.stat{background:#fff;border-radius:9px;padding:10px;text-align:center;border-top:4px solid var(--navy)}
+.stat .n{font-size:24px;font-weight:bold;color:var(--navy)}.stat .l{font-size:12px;color:#666}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.unit{background:#fff;border-radius:9px;padding:10px;border-left:6px solid var(--pend);cursor:pointer}
+.unit .n{font-weight:bold;color:var(--navy)}.unit .s{font-size:12px;color:#666;margin-top:3px}
+.badge{display:inline-block;color:#fff;border-radius:10px;padding:2px 9px;font-size:12px}
+.hist{border-left:5px solid var(--pend)}
+.actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;margin:6px 0}
+.legend span:before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;background:var(--c)}
+.hide{display:none!important}
+.sticky-save{position:sticky;bottom:0;background:var(--beige);padding:10px 0;display:flex;gap:8px}
+.sticky-save .btn{flex:1}
+#print{display:none}
+@media print{
+  body{background:#fff}
+  header,nav,main{display:none!important}
+  #print{display:block;font-family:"Goudy Old Style",Georgia,serif;color:#000}
+  #print h1{font-family:"Felix Titling",Georgia,serif;color:#1F3864;font-size:18px;border-bottom:3px solid #B08D3E;padding-bottom:4px}
+  #print h2{color:#1F3864;font-size:15px;margin-top:16px}
+  #print table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
+  #print th{background:#1F3864;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #print th,#print td{border:1px solid #999;padding:4px 6px;text-align:left;vertical-align:top}
+  #print img{width:150px;height:auto;margin:3px;border:1px solid #ccc}
+  #print img.logo{width:70px;border:0;margin:0}
+  .pb{page-break-before:always}
+}
+</style>
+</head>
+<body>
+<header>
+  <span id="sync">…</span>
+  <div class="hdr">
+    <img id="hdrLogo" alt="Grupo Martinón">
+    <div>
+      <h1>LEVANTAMIENTO OASIS Y CAMAS BALINESAS</h1>
+      <div class="sub">BREPC — Breathless Punta Cana · Mantenimiento profundo</div>
+      <div class="sub" id="hdrDirector" style="font-size:13px;color:#fff"></div>
+    </div>
+  </div>
+</header>
+<nav>
+  <button data-v="resumen" class="on">Resumen</button>
+  <button data-v="form">Levantamiento</button>
+  <button data-v="hist">Historial</button>
+</nav>
+<main>
+  <!-- RESUMEN -->
+  <section id="v-resumen">
+    <div id="savedBanner"></div>
+    <div class="stats" id="stats"></div>
+    <div class="card" style="margin-top:12px">
+      <h2>Estado por unidad</h2>
+      <div class="legend">
+        <span style="--c:var(--ok)">Sin hallazgos</span><span style="--c:var(--mtto)">Requiere mtto</span>
+        <span style="--c:var(--reemp)">Requiere reemplazo</span><span style="--c:var(--pend)">Pendiente</span>
+      </div>
+      <div id="units"></div>
+    </div>
+    <div class="card">
+      <h2>Programa de trabajo</h2>
+      <div id="programa" style="overflow-x:auto"></div>
+      <div class="actions" style="margin-top:14px">
+        <button class="btn gold" onclick="exportConsolidadoWord()">Consolidado Word</button>
+        <button class="btn light" onclick="exportConsolidadoPDF()">Consolidado PDF</button>
+      </div>
+      <div style="font-size:12px;color:#666;margin-top:6px">El consolidado toma el último levantamiento de cada unidad e incluye la lista de trabajos para el mantenimiento profundo.</div>
+    </div>
+  </section>
+
+  <!-- FORMULARIO -->
+  <section id="v-form" class="hide">
+    <div class="card">
+      <h2 id="formTitle">Nuevo levantamiento</h2>
+      <div class="row">
+        <div><label>Hotel</label><input id="f-hotel" readonly style="background:#f4f1ee"></div>
+        <div><label>Director General</label><input id="f-director" placeholder="Nombre del Director"></div>
+      </div>
+      <div class="row">
+        <div><label>Unidad</label><select id="f-unidad"></select></div>
+        <div><label>Fecha del levantamiento</label><input type="date" id="f-fecha"></div>
+        <div><label>Evaluador</label><input id="f-evaluador" placeholder="Nombre de quien levanta"></div>
+      </div>
+      <div id="f-info" style="font-size:13px;color:#666;margin-top:8px"></div>
+    </div>
+    <div class="card" id="f-items"></div>
+    <div class="card">
+      <h3 style="margin-top:0">Programa de trabajo</h3>
+      <div class="row">
+        <div><label>Fecha de inicio</label><input type="date" id="p-inicio" onchange="paintDias()"></div>
+        <div><label>Fecha fin programada</label><input type="date" id="p-fin" onchange="paintDias()"></div>
+        <div><label>Responsable del trabajo</label><input id="p-resp" placeholder="Técnico, cuadrilla o contratista"></div>
+      </div>
+      <div class="row">
+        <div><label>Estado del trabajo</label><select id="p-estado" onchange="paintDias()"><option value="">Sin programar</option><option>Programado</option><option>En proceso</option><option>Terminado</option></select></div>
+        <div><label>Fecha real de término</label><input type="date" id="p-real" onchange="paintDias()"></div>
+      </div>
+      <div id="p-dias" style="font-size:13px;margin-top:8px;color:var(--navy)"></div>
+      <label>Notas del programa</label>
+      <textarea id="p-notas" placeholder="Materiales, proveedor, si la unidad queda fuera de venta, etc."></textarea>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Observaciones generales</h3>
+      <textarea id="f-obs" placeholder="Otros hallazgos, comentarios para el equipo de mantenimiento…"></textarea>
+      <div id="pb-_general"></div>
+      <div class="thumbs" id="th-_general"></div>
+    </div>
+    <div class="sticky-save">
+      <button class="btn light" onclick="newForm()">Limpiar</button>
+      <button class="btn gold" onclick="saveForm()">Guardar levantamiento</button>
+    </div>
+  </section>
+
+  <!-- HISTORIAL -->
+  <section id="v-hist" class="hide">
+    <div class="card">
+      <h2>Historial</h2>
+      <div class="row">
+        <div><label>Desde</label><input type="date" id="h-desde"></div>
+        <div><label>Hasta</label><input type="date" id="h-hasta"></div>
+        <div><label>Tipo</label><select id="h-tipo"><option value="">Todos</option><option>Oasis</option><option>Balinesa</option></select></div>
+        <div><label>Unidad</label><select id="h-unidad"><option value="">Todas</option></select></div>
+      </div>
+      <div class="actions"><button class="btn sm light" onclick="syncNow()">↻ Sincronizar</button></div>
+    </div>
+    <div id="histList"></div>
+  </section>
+</main>
+<div id="print"></div>
+
+<script>
+/* ================== CONFIGURACIÓN ================== */
+const SUPABASE_URL = 'https://wwnuiriqjbiaggmdrlrk.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_5Xh8VJ78xQOhfxRR-GqyLw_LdDnTlZc'; // ← pegar la anon key del proyecto Supabase
+const TABLE = 'brepc_camas_levantamiento';
+const LS_KEY = 'brepc_camas_levantamiento_v1';
+const PROPIEDAD = 'BREPC — Breathless Punta Cana';
+const LOGO = 'data:image/jpeg;base64,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';
+const LOGO_W = 178, LOGO_H = 148;
+const DIRECTOR_DEFAULT = 'Omar Saavedra';
+
+let sb = null;
+try { if (!SUPABASE_ANON_KEY.startsWith('PEGAR')) sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { sb = null; }
+
+/* ================== CATÁLOGO ================== */
+function slug(s){return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
+const UNITS = [
+  ['Galeras','Oasis','Sensory'],['Esmeralda','Oasis','Sensory'],['Limón','Oasis','Sensory'],
+  ['Haitises','Oasis','Sensory'],['Bahía de las Águilas','Oasis','Sensory'],
+  ['Ermitaño','Oasis','Sublime'],['El Valle','Oasis','Sublime'],['Punto Rusia','Oasis','Sublime'],['Roca Chica','Oasis','Sublime'],
+  ['Son','Balinesa','Sensory'],['Bachata','Balinesa','Sensory'],['Perico Ripiao','Balinesa','Sensory'],
+  ['Salsa','Balinesa','Sensory'],['Reguetón','Balinesa','Sensory'],['Rumba','Balinesa','Sensory'],
+  ['Bolero','Balinesa','Sublime'],['Merengue','Balinesa','Sublime']
+].map(([n,t,z]) => ({id: slug(t+'-'+n), nombre:n, tipo:t, zona:z}));
+const unitById = id => UNITS.find(u => u.id === id);
+
+const COMUNES = [
+  {k:'colchon', l:'Colchón'},
+  {k:'base_colchon', l:'Base de colchón'},
+  {k:'cordon_cierre', l:'Cordón de cierre'},
+  {k:'cancamo_1', l:'Cáncamo 1'},
+  {k:'cancamo_2', l:'Cáncamo 2'},
+  {k:'senaletica', l:'Señalética (nombre de la unidad)'}
+];
+const SECTIONS = {
+  Oasis: [
+    {s:'Elementos comunes', items: COMUNES},
+    {s:'Estructura (2 pisos)', items:[
+      {k:'estructura_p1', l:'Estructura piso 1'},
+      {k:'estructura_p2', l:'Estructura piso 2 / escalera / barandal'}
+    ]},
+    {s:'Mobiliario Oasis', items:[
+      {k:'camastro_1', l:'Camastro 1 (piso 2)'},
+      {k:'camastro_2', l:'Camastro 2 (piso 2)'},
+      {k:'mesa_p2', l:'Mesa en medio (piso 2)'},
+      {k:'mesita_nevera', l:'Mesita para nevera'}
+    ]}
+  ],
+  Balinesa: [
+    {s:'Elementos comunes', items: COMUNES},
+    {s:'Elementos Balinesa', items:[{k:'cortinas', l:'Cortinas'}]}
+  ]
+};
+const itemList = tipo => SECTIONS[tipo].flatMap(x => x.items);
+
+const ESTADOS = {
+  ok:   {l:'Buen estado',        c:'var(--ok)',   hex:'2E7D32'},
+  mtto: {l:'Requiere mtto',      c:'var(--mtto)', hex:'D89A00'},
+  reemp:{l:'Requiere reemplazo', c:'var(--reemp)',hex:'C62828'},
+  na:   {l:'No aplica / no existe', c:'var(--na)', hex:'8A8A8A'}
+};
+const RES = {
+  ok:        {l:'Sin hallazgos',      c:'var(--ok)',   hex:'2E7D32'},
+  mtto:      {l:'Requiere mtto',      c:'var(--mtto)', hex:'D89A00'},
+  reemp:     {l:'Requiere reemplazo', c:'var(--reemp)',hex:'C62828'},
+  incompleto:{l:'Incompleto',         c:'var(--pend)', hex:'B9B3AD'},
+  pendiente: {l:'Pendiente',          c:'var(--pend)', hex:'B9B3AD'}
+};
+
+/* ================== DATOS ================== */
+let entries = [];
+function loadLocal(){ try { entries = JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch(e){ entries = []; } }
+function saveLocal(){
+  try { localStorage.setItem(LS_KEY, JSON.stringify(entries)); }
+  catch(e){ alert('El almacenamiento local del navegador está lleno (muchas fotos). Los datos sí se guardan en Supabase si hay conexión.'); }
+}
+function calc(e){
+  const u = unitById(e.unidad_id); const its = itemList(u.tipo);
+  const c = {ok:0, mtto:0, reemp:0, na:0, pend:0};
+  its.forEach(i => { const st = e.items?.[i.k]?.estado; if (st) c[st]++; else c.pend++; });
+  c.res = c.reemp ? 'reemp' : c.mtto ? 'mtto' : c.pend ? 'incompleto' : 'ok';
+  c.total = its.length;
+  return c;
+}
+function toRow(e){
+  const u = unitById(e.unidad_id);
+  return {id:e.id, propiedad:PROPIEDAD, director:e.director, programa:e.programa||{}, unidad_id:e.unidad_id, unidad:u.nombre, tipo:u.tipo, zona:u.zona,
+    fecha:e.fecha, evaluador:e.evaluador, resultado:calc(e).res, items:e.items, obs_general:e.obs_general,
+    fotos_general:e.fotos_general, created_at:e.created_at, updated_at:e.updated_at};
+}
+function fromRow(r){
+  return {id:r.id, director:r.director||'', programa:r.programa||{}, unidad_id:r.unidad_id, fecha:r.fecha, evaluador:r.evaluador, items:r.items||{},
+    obs_general:r.obs_general||'', fotos_general:r.fotos_general||[], created_at:r.created_at, updated_at:r.updated_at};
+}
+function setSync(t){ document.getElementById('sync').textContent = t; }
+
+async function pull(){
+  if (!sb){ setSync('Solo local'); return; }
+  setSync('Sincronizando…');
+  const {data, error} = await sb.from(TABLE).select('*');
+  if (error){ setSync('Sin conexión'); return; }
+  const map = new Map(entries.map(e => [e.id, e]));
+  data.forEach(r => { const l = map.get(r.id); if (!l || new Date(r.updated_at) >= new Date(l.updated_at)) map.set(r.id, fromRow(r)); });
+  // subir pendientes locales
+  for (const e of map.values()){
+    if (e._pending){ const ok = await push(e); if (ok) delete e._pending; }
+  }
+  entries = [...map.values()];
+  saveLocal(); setSync('✓ Sincronizado'); renderAll();
+}
+async function push(e){
+  if (!sb) return false;
+  const {error} = await sb.from(TABLE).upsert(toRow(e));
+  return !error;
+}
+async function syncNow(){ await pull(); }
+
+/* ================== NAVEGACIÓN ================== */
+function show(v){
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  ['resumen','form','hist'].forEach(x => document.getElementById('v-'+x).classList.toggle('hide', x !== v));
+  if (v === 'resumen') renderResumen();
+  if (v === 'hist') renderHist();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.v));
+
+/* ================== RESUMEN ================== */
+const latest = id => entries.filter(e => e.unidad_id === id).sort((a,b) => (b.fecha+b.updated_at).localeCompare(a.fecha+a.updated_at))[0];
+function renderResumen(){
+  const sv = lastSaved && entries.find(x => x.id === lastSaved);
+  document.getElementById('savedBanner').innerHTML = sv ? (() => { const u = unitById(sv.unidad_id), r = RES[calc(sv).res];
+    return `<div class="card" style="border-left:6px solid ${r.c}"><b style="color:var(--navy)">✓ Guardado: ${u.tipo} ${esc(u.nombre)}</b> — ${r.l}
+      <div class="actions"><button class="btn sm gold" onclick="exportEntryWord('${sv.id}')">Descargar Word</button>
+      <button class="btn sm light" onclick="exportEntryPDF('${sv.id}')">Descargar PDF</button>
+      <button class="btn sm light" onclick="lastSaved=null;renderResumen()">Cerrar</button></div></div>`; })() : '';
+  const st = {lev:0, ok:0, mtto:0, reemp:0, pend:0, prog:0, term:0, late:0};
+  UNITS.forEach(u => { const l = latest(u.id); if (!l){ st.pend++; return; }
+    const pi = progInfo(l.programa); if (pi.st !== 'Sin programar') st.prog++; if (pi.st === 'Terminado') st.term++; if (pi.late) st.late++; st.lev++; const r = calc(l).res; if (st[r] !== undefined) st[r]++; });
+  document.getElementById('stats').innerHTML = [
+    ['Unidades', UNITS.length, 'var(--navy)'], ['Levantadas', st.lev, 'var(--gold)'],
+    ['Sin hallazgos', st.ok, 'var(--ok)'], ['Requiere mtto', st.mtto, 'var(--mtto)'],
+    ['Reemplazo', st.reemp, 'var(--reemp)'], ['Pendientes', st.pend, 'var(--pend)'],
+    ['Programadas', st.prog, 'var(--navy)'], ['Terminadas', st.term, 'var(--ok)'], ['Atrasadas', st.late, 'var(--reemp)']
+  ].map(([l,n,c]) => `<div class="stat" style="border-top-color:${c}"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+  let h = '';
+  ['Oasis','Balinesa'].forEach(t => {
+    h += `<h3>${t === 'Oasis' ? 'Oasis (2 pisos)' : 'Camas Balinesas (1 piso)'}</h3>`;
+    ['Sensory','Sublime'].forEach(z => {
+      const us = UNITS.filter(u => u.tipo === t && u.zona === z); if (!us.length) return;
+      h += `<div style="font-size:13px;color:#666;margin:6px 0">Lado ${z}</div><div class="grid">`;
+      us.forEach(u => {
+        const l = latest(u.id); const c = l ? calc(l) : null; const r = c ? RES[c.res] : RES.pendiente;
+        h += `<div class="unit" style="border-left-color:${r.c}" onclick="openUnit('${u.id}')">
+          <div class="n">${esc(u.nombre)}</div>
+          <div class="s">${r.l}${l ? ' · ' + fmt(l.fecha) : ''}</div>
+          ${c && (c.mtto||c.reemp) ? `<div class="s">${c.mtto} mtto · ${c.reemp} reemplazo</div>` : ''}
+          ${l && l.programa && l.programa.inicio ? (() => { const pi = progInfo(l.programa); return `<div class="prog ${pi.late?'late':''}">🗓 ${pi.txt}</div>`; })() : ''}
+          ${l ? `<div class="actions" style="margin-top:6px"><button class="btn sm gold" onclick="event.stopPropagation();exportEntryWord('${l.id}')">Word</button><button class="btn sm light" onclick="event.stopPropagation();exportEntryPDF('${l.id}')">PDF</button></div>` : ''}
+        </div>`;
+      });
+      h += '</div>';
+    });
+  });
+  document.getElementById('units').innerHTML = h;
+  // Programa de trabajo
+  const prog = UNITS.map(u => ({u, l:latest(u.id)})).filter(x => x.l && x.l.programa && x.l.programa.inicio)
+    .sort((a,b) => a.l.programa.inicio.localeCompare(b.l.programa.inicio));
+  document.getElementById('programa').innerHTML = prog.length ?
+    '<table class="pt"><tr><th>Unidad</th><th>Inicio</th><th>Fin prog.</th><th>Días</th><th>Responsable</th><th>Estado</th></tr>' +
+    prog.map(({u,l}) => { const p = l.programa, i = progInfo(p);
+      return `<tr onclick="editEntry('${l.id}')" style="cursor:pointer"><td><b>${u.tipo} ${esc(u.nombre)}</b></td><td>${fmt(p.inicio)}</td><td>${p.fin ? fmt(p.fin) : '—'}</td><td>${i.dias ?? '—'}</td><td>${esc(p.responsable || '—')}</td><td class="${i.late?'late':''}">${i.st}${i.st==='Terminado'&&p.real?' '+fmt(p.real):''}</td></tr>`; }).join('') + '</table>'
+    : '<div style="color:#666;font-size:14px">Aún no hay trabajos programados. Coloca las fechas en la sección "Programa de trabajo" del levantamiento de cada unidad.</div>';
+}
+function openUnit(id){
+  const l = latest(id);
+  if (l && confirm(`${unitById(id).nombre} ya tiene un levantamiento del ${fmt(l.fecha)}.\n\nAceptar = editar ese levantamiento\nCancelar = crear uno nuevo`)) { editEntry(l.id); return; }
+  newForm(id); show('form');
+}
+
+/* ================== FORMULARIO ================== */
+let cur = null, lastSaved = null;
+function today(){ const d = new Date(); return new Date(d - d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+function uid(){ return 'cb-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7); }
+function fillUnitSelect(){
+  const s = document.getElementById('f-unidad');
+  s.innerHTML = ['Oasis','Balinesa'].map(t => `<optgroup label="${t === 'Oasis' ? 'Oasis' : 'Camas Balinesas'}">` +
+    UNITS.filter(u => u.tipo === t).map(u => `<option value="${u.id}">${esc(u.nombre)} — Lado ${u.zona}</option>`).join('') + '</optgroup>').join('');
+  s.onchange = () => { cur.unidad_id = s.value; renderItems(); };
+  const hs = document.getElementById('h-unidad');
+  hs.innerHTML = '<option value="">Todas</option>' + UNITS.map(u => `<option value="${u.id}">${u.tipo} — ${esc(u.nombre)}</option>`).join('');
+}
+function newForm(unitId){
+  cur = {id:null, unidad_id: unitId || UNITS[0].id, fecha: today(),
+    evaluador: localStorage.getItem('brepc_camas_evaluador') || '', director: localStorage.getItem('brepc_camas_director') || DIRECTOR_DEFAULT, programa:{}, items:{}, obs_general:'', fotos_general:[]};
+  document.getElementById('formTitle').textContent = 'Nuevo levantamiento';
+  paintForm();
+}
+function editEntry(id){
+  const e = entries.find(x => x.id === id); if (!e) return;
+  cur = JSON.parse(JSON.stringify(e));
+  document.getElementById('formTitle').textContent = 'Editando levantamiento';
+  paintForm(); show('form');
+}
+function paintForm(){
+  document.getElementById('f-unidad').value = cur.unidad_id;
+  document.getElementById('f-fecha').value = cur.fecha;
+  document.getElementById('f-evaluador').value = cur.evaluador;
+  document.getElementById('f-obs').value = cur.obs_general || '';
+  document.getElementById('f-hotel').value = PROPIEDAD;
+  document.getElementById('f-director').value = cur.director || '';
+  const p = cur.programa || {};
+  document.getElementById('p-inicio').value = p.inicio || '';
+  document.getElementById('p-fin').value = p.fin || '';
+  document.getElementById('p-resp').value = p.responsable || '';
+  document.getElementById('p-estado').value = p.estado || '';
+  document.getElementById('p-real').value = p.real || '';
+  document.getElementById('p-notas').value = p.notas || '';
+  paintDias();
+  renderItems(); document.getElementById('pb-_general').innerHTML = photoBtns('_general'); renderThumbs('_general');
+}
+function renderItems(){
+  const u = unitById(cur.unidad_id);
+  document.getElementById('f-info').innerHTML =
+    `<b>${u.tipo === 'Oasis' ? 'Oasis — 2 pisos' : 'Cama Balinesa — 1 piso'}</b> · Lado ${u.zona} · Servicio de pago extra`;
+  let h = '';
+  SECTIONS[u.tipo].forEach((sec, si) => {
+    h += `<h3${si === 0 ? ' style="margin-top:0"' : ''}>${sec.s}</h3>`;
+    sec.items.forEach(it => {
+      const v = cur.items[it.k] || {};
+      h += `<div class="item"><div class="t">${it.l}</div><div class="chips">` +
+        Object.entries(ESTADOS).map(([k,e]) =>
+          `<button class="chip ${v.estado === k ? 'on' : ''}" style="${v.estado === k ? 'background:'+e.c : ''}" onclick="setEstado('${it.k}','${k}')">${e.l}</button>`).join('') +
+        `</div><textarea placeholder="Observación (qué se encontró, medida, cantidad…)" oninput="setObs('${it.k}',this.value)">${esc(v.obs || '')}</textarea>
+        ${photoBtns(it.k)}
+        <div class="thumbs" id="th-${it.k}"></div></div>`;
+    });
+  });
+  document.getElementById('f-items').innerHTML = h;
+  itemList(u.tipo).forEach(it => renderThumbs(it.k));
+}
+function photoBtns(k){
+  return `<label class="photo-btn">📷 Tomar foto<input type="file" accept="image/*" capture="environment" onchange="addPhotos(event,'${k}')"></label>
+  <label class="photo-btn">🖼 Galería (varias)<input type="file" accept="image/*" multiple onchange="addPhotos(event,'${k}')"></label>`;
+}
+function slot(k){ if (k === '_general') return cur.fotos_general; cur.items[k] = cur.items[k] || {}; cur.items[k].fotos = cur.items[k].fotos || []; return cur.items[k].fotos; }
+function setEstado(k, st){ cur.items[k] = cur.items[k] || {}; cur.items[k].estado = cur.items[k].estado === st ? null : st; const y = window.scrollY; renderItems(); window.scrollTo(0,y); }
+function setObs(k, v){ cur.items[k] = cur.items[k] || {}; cur.items[k].obs = v; }
+function renderThumbs(k){
+  const el = document.getElementById('th-'+k); if (!el) return;
+  const arr = k === '_general' ? cur.fotos_general : (cur.items[k]?.fotos || []);
+  el.innerHTML = arr.map((f,i) => `<div><img src="${f.data}"><b onclick="rmPhoto('${k}',${i})">×</b></div>`).join('') +
+    (arr.length ? `<span style="font-size:12px;color:#666;align-self:center">${arr.length} foto(s)</span>` : '');
+}
+function rmPhoto(k,i){ slot(k).splice(i,1); renderThumbs(k); }
+async function addPhotos(ev, k){
+  for (const file of ev.target.files){ try { slot(k).push(await compress(file)); } catch(e){ alert('No se pudo leer una imagen.'); } }
+  ev.target.value = ''; renderThumbs(k);
+}
+function compress(file){
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => { const img = new Image();
+      img.onload = () => { const max = 1100; let w = img.width, h = img.height;
+        if (w > max || h > max){ const s = max/Math.max(w,h); w = Math.round(w*s); h = Math.round(h*s); }
+        const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(img,0,0,w,h);
+        res({data: c.toDataURL('image/jpeg', 0.6), w, h}); };
+      img.onerror = rej; img.src = r.result; };
+    r.onerror = rej; r.readAsDataURL(file);
+  });
+}
+async function saveForm(){
+  cur.unidad_id = document.getElementById('f-unidad').value;
+  cur.fecha = document.getElementById('f-fecha').value;
+  cur.evaluador = document.getElementById('f-evaluador').value.trim();
+  cur.obs_general = document.getElementById('f-obs').value;
+  cur.director = document.getElementById('f-director').value.trim();
+  cur.programa = readProg();
+  if (cur.programa.inicio && cur.programa.fin && cur.programa.fin < cur.programa.inicio){ alert('La fecha fin programada no puede ser anterior a la fecha de inicio.'); return; }
+  if (cur.programa.estado && cur.programa.estado !== '' && !cur.programa.inicio){ alert('Para programar el trabajo coloca la fecha de inicio.'); return; }
+  if (cur.director) localStorage.setItem('brepc_camas_director', cur.director);
+  if (!cur.fecha || !cur.evaluador){ alert('Completa la fecha y el evaluador.'); return; }
+  // limpiar ítems que no pertenecen al tipo (si se cambió de unidad)
+  const keys = itemList(unitById(cur.unidad_id).tipo).map(i => i.k);
+  Object.keys(cur.items).forEach(k => { if (!keys.includes(k)) delete cur.items[k]; });
+  const c = calc(cur);
+  if (c.pend && !confirm(`Faltan ${c.pend} elemento(s) por calificar. ¿Guardar de todas formas?`)) return;
+  localStorage.setItem('brepc_camas_evaluador', cur.evaluador); paintHdr();
+  const now = new Date().toISOString();
+  if (!cur.id){ cur.id = uid(); cur.created_at = now; }
+  cur.updated_at = now;
+  const e = JSON.parse(JSON.stringify(cur));
+  const ok = await push(e); if (!ok) e._pending = true;
+  entries = entries.filter(x => x.id !== e.id); entries.push(e); saveLocal();
+  setSync(sb ? (ok ? '✓ Sincronizado' : 'Pendiente de subir') : 'Solo local');
+  const u = unitById(e.unidad_id);
+  lastSaved = e.id;
+  newForm(); show('resumen');
+}
+function readProg(){
+  return {inicio:document.getElementById('p-inicio').value, fin:document.getElementById('p-fin').value,
+    responsable:document.getElementById('p-resp').value.trim(), estado:document.getElementById('p-estado').value,
+    real:document.getElementById('p-real').value, notas:document.getElementById('p-notas').value};
+}
+function dias(a,b){ return Math.round((new Date(b) - new Date(a)) / 86400000) + 1; }
+function progInfo(p){
+  p = p || {};
+  if (!p.inicio) return {st:'Sin programar', txt:'Sin programar', late:false, dias:null};
+  const d = p.fin ? dias(p.inicio, p.fin) : null;
+  let st = p.estado || 'Programado', late = false;
+  if (st !== 'Terminado' && p.fin && p.fin < today()){ st = 'Atrasado'; late = true; }
+  let txt = `${fmt(p.inicio)} → ${p.fin ? fmt(p.fin) : '¿?'}${d ? ` (${d} día${d>1?'s':''})` : ''} · ${st}`;
+  if (st === 'Terminado' && p.real){ const dr = dias(p.inicio, p.real); txt += ` el ${fmt(p.real)} (${dr} día${dr>1?'s':''} reales)`; if (p.fin && p.real > p.fin) txt += ' — fuera de plazo'; }
+  return {st, txt, late, dias:d};
+}
+function paintDias(){
+  const p = readProg(); const i = progInfo(p);
+  document.getElementById('p-dias').innerHTML = p.inicio ? `<span class="${i.late?'late':''}">Tiempo de trabajo: ${i.txt}</span>` : '';
+}
+
+/* ================== HISTORIAL ================== */
+['h-desde','h-hasta','h-tipo','h-unidad'].forEach(id => document.getElementById(id).onchange = renderHist);
+function renderHist(){
+  const d = document.getElementById('h-desde').value, a = document.getElementById('h-hasta').value,
+        t = document.getElementById('h-tipo').value, un = document.getElementById('h-unidad').value;
+  const list = entries.filter(e => { const u = unitById(e.unidad_id); return u && (!d || e.fecha >= d) && (!a || e.fecha <= a) && (!t || u.tipo === t) && (!un || e.unidad_id === un); })
+    .sort((x,y) => (y.fecha+y.updated_at).localeCompare(x.fecha+x.updated_at));
+  document.getElementById('histList').innerHTML = list.length ? list.map(e => {
+    const u = unitById(e.unidad_id), c = calc(e), r = RES[c.res];
+    return `<div class="card hist" style="border-left-color:${r.c}">
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <div><b style="color:var(--navy)">${u.tipo} ${esc(u.nombre)}</b> <span style="color:#666;font-size:13px">· Lado ${u.zona}</span></div>
+        <span class="badge" style="background:${r.c}">${r.l}</span></div>
+      <div style="font-size:13px;color:#555;margin-top:4px">${fmt(e.fecha)} · ${esc(e.evaluador)} · ${c.ok} ok · ${c.mtto} mtto · ${c.reemp} reemplazo${c.pend ? ' · ' + c.pend + ' sin calificar' : ''}${e._pending ? ' · <b style="color:var(--reemp)">pendiente de subir</b>' : ''}</div>
+      <div class="actions">
+        <button class="btn sm" onclick="editEntry('${e.id}')">Editar</button>
+        <button class="btn sm gold" onclick="exportEntryWord('${e.id}')">Word</button>
+        <button class="btn sm light" onclick="exportEntryPDF('${e.id}')">PDF</button>
+        <button class="btn sm red" onclick="delEntry('${e.id}')">Eliminar</button>
+      </div></div>`;
+  }).join('') : '<div class="card" style="color:#666">No hay levantamientos con esos filtros.</div>';
+}
+async function delEntry(id){
+  if (!confirm('¿Eliminar este levantamiento? No se puede deshacer.')) return;
+  if (sb){ const {error} = await sb.from(TABLE).delete().eq('id', id); if (error){ alert('No se pudo eliminar en Supabase (sin conexión). Intenta de nuevo con conexión.'); return; } }
+  entries = entries.filter(e => e.id !== id); saveLocal(); renderHist(); renderResumen();
+}
+
+/* ================== EXPORTAR WORD ================== */
+const D = window.docx;
+function b64ToBytes(u){ const b = atob(u.split(',')[1]); const a = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+const FONT = 'Goudy Old Style';
+const P = (text, o = {}) => new D.Paragraph({spacing:{after:o.after ?? 80}, alignment:o.align, children:[new D.TextRun({text:String(text ?? ''), bold:o.bold, italics:o.italics, color:o.color, size:o.size || 21, font:o.font || FONT})]});
+const H = (text, lvl = 1) => new D.Paragraph({spacing:{before:lvl === 1 ? 120 : 240, after:100},
+  border: lvl === 1 ? {bottom:{style:D.BorderStyle.SINGLE, size:12, color:'B08D3E'}} : undefined,
+  children:[new D.TextRun({text, bold:true, color:'1F3864', size:lvl === 1 ? 30 : 24, font:lvl === 1 ? 'Felix Titling' : FONT})]});
+function C(text, o = {}){
+  return new D.TableCell({width:o.w ? {size:o.w, type:D.WidthType.PERCENTAGE} : undefined,
+    shading:o.fill ? {fill:o.fill, type:D.ShadingType.CLEAR, color:'auto'} : undefined,
+    margins:{top:60, bottom:60, left:90, right:90},
+    children:[new D.Paragraph({children:[new D.TextRun({text:String(text ?? ''), bold:o.bold, color:o.color, size:19, font:FONT})]})]});
+}
+const T = rows => new D.Table({width:{size:100, type:D.WidthType.PERCENTAGE}, rows:rows.map(r => new D.TableRow({children:r}))});
+const HEAD = arr => arr.map(([t,w]) => C(t, {bold:true, color:'FFFFFF', fill:'1F3864', w}));
+function imgPara(f, maxW = 230){
+  const s = Math.min(1, maxW / f.w);
+  return new D.ImageRun({data:b64ToBytes(f.data), transformation:{width:Math.round(f.w*s), height:Math.round(f.h*s)}});
+}
+function photosBlock(fotos){ return fotos && fotos.length ? [new D.Paragraph({spacing:{after:120}, children:fotos.flatMap((f,i) => i ? [new D.TextRun('  '), imgPara(f)] : [imgPara(f)])})] : []; }
+
+function fichaBlocks(e){
+  const u = unitById(e.unidad_id), c = calc(e), r = RES[c.res];
+  const out = [
+    H(`${u.tipo === 'Oasis' ? 'OASIS' : 'CAMA BALINESA'} ${u.nombre.toUpperCase()}`),
+    T([
+      [C('Hotel',{bold:true,fill:'EDE9E6',w:22}), C(PROPIEDAD,{w:28}), C('Director General',{bold:true,fill:'EDE9E6',w:20}), C(e.director || '—',{w:30})],
+      [C('Unidad',{bold:true,fill:'EDE9E6'}), C(u.nombre,{bold:true}), C('Fecha levantamiento',{bold:true,fill:'EDE9E6'}), C(fmt(e.fecha))],
+      [C('Tipo',{bold:true,fill:'EDE9E6'}), C(u.tipo === 'Oasis' ? 'Oasis — 2 pisos (pago extra)' : 'Balinesa — 1 piso (pago extra)'), C('Ubicación',{bold:true,fill:'EDE9E6'}), C('Lado ' + u.zona)],
+      [C('Evaluador',{bold:true,fill:'EDE9E6'}), C(e.evaluador), C('Resultado',{bold:true,fill:'EDE9E6'}), C(r.l,{bold:true,color:r.hex})]
+    ]),
+    P(`Buen estado: ${c.ok} · Requiere mtto: ${c.mtto} · Requiere reemplazo: ${c.reemp} · No aplica: ${c.na}${c.pend ? ' · Sin calificar: ' + c.pend : ''}`, {italics:true, color:'B08D3E', after:120}),
+  ];
+  SECTIONS[u.tipo].forEach(sec => {
+    out.push(H(sec.s, 2));
+    out.push(T([HEAD([['Elemento',30],['Estado',22],['Observación',48]]), ...sec.items.map(it => {
+      const v = e.items[it.k] || {}; const st = ESTADOS[v.estado];
+      return [C(it.l,{bold:true}), C(st ? st.l : 'Sin calificar',{bold:true,color:st ? st.hex : '8A8A8A'}), C(v.obs || '—')];
+    })]));
+    sec.items.forEach(it => { const f = e.items[it.k]?.fotos; if (f && f.length){ out.push(P('Fotos — ' + it.l, {bold:true, color:'1F3864', after:40})); out.push(...photosBlock(f)); } });
+  });
+  const p = e.programa || {}, pi = progInfo(p);
+  out.push(H('Programa de trabajo', 2));
+  out.push(T([
+    [C('Fecha de inicio',{bold:true,fill:'EDE9E6',w:25}), C(p.inicio ? fmt(p.inicio) : '—',{w:25}), C('Fecha fin programada',{bold:true,fill:'EDE9E6',w:25}), C(p.fin ? fmt(p.fin) : '—',{w:25})],
+    [C('Tiempo de trabajo',{bold:true,fill:'EDE9E6'}), C(pi.dias ? pi.dias + ' día(s)' : '—'), C('Responsable',{bold:true,fill:'EDE9E6'}), C(p.responsable || '—')],
+    [C('Estado del trabajo',{bold:true,fill:'EDE9E6'}), C(pi.st,{bold:true,color:pi.late ? 'C62828' : pi.st === 'Terminado' ? '2E7D32' : '1F3864'}), C('Fecha real de término',{bold:true,fill:'EDE9E6'}), C(p.real ? fmt(p.real) : '—')],
+    [C('Notas',{bold:true,fill:'EDE9E6'}), C(p.notas || '—'), C(''), C('')]
+  ]));
+  out.push(H('Observaciones generales', 2), P(e.obs_general || '—'));
+  out.push(...photosBlock(e.fotos_general));
+  return out;
+}
+function makeDoc(children){
+  return new D.Document({styles:{default:{document:{run:{font:FONT}}}},
+    sections:[{properties:{page:{margin:{top:900, bottom:900, left:900, right:900}}},
+      headers:{default:new D.Header({children:[new D.Paragraph({alignment:D.AlignmentType.LEFT, children:[
+        new D.ImageRun({data:b64ToBytes(LOGO), transformation:{width:60, height:Math.round(60*LOGO_H/LOGO_W)}}),
+        new D.TextRun({text:'   GRUPO MARTINÓN · ' + PROPIEDAD, color:'B08D3E', size:16, font:FONT})]})]})},
+      children}]});
+}
+async function download(doc, name){
+  const blob = await D.Packer.toBlob(doc);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+async function exportEntryWord(id){
+  const e = entries.find(x => x.id === id); const u = unitById(e.unidad_id);
+  await download(makeDoc([P('LEVANTAMIENTO DE MANTENIMIENTO', {bold:true, color:'1F3864', size:22, font:'Felix Titling'}), ...fichaBlocks(e)]),
+    `Levantamiento ${u.tipo} ${u.nombre} BREPC ${e.fecha}.docx`);
+}
+function consolidadoData(){
+  const rows = UNITS.map(u => ({u, e:latest(u.id)}));
+  const trabajos = [];
+  rows.forEach(({u,e}) => { if (!e) return; itemList(u.tipo).forEach(it => { const v = e.items[it.k]; if (v && (v.estado === 'mtto' || v.estado === 'reemp')) trabajos.push({u, it, v}); }); });
+  trabajos.sort((a,b) => (a.v.estado === 'reemp' ? 0 : 1) - (b.v.estado === 'reemp' ? 0 : 1));
+  return {rows, trabajos};
+}
+async function exportConsolidadoWord(){
+  const {rows, trabajos} = consolidadoData();
+  if (!rows.some(r => r.e)){ alert('Aún no hay levantamientos.'); return; }
+  const ch = [
+    H('LEVANTAMIENTO OASIS Y CAMAS BALINESAS — BREPC'),
+    P(`Consolidado al ${fmt(today())} · Último levantamiento por unidad`, {italics:true, color:'B08D3E'}),
+    P(`Hotel: ${PROPIEDAD}   ·   Director General: ${localStorage.getItem('brepc_camas_director') || DIRECTOR_DEFAULT}`, {bold:true}),
+    H('Resumen por unidad', 2),
+    T([HEAD([['Unidad',17],['Tipo',11],['Fecha lev.',11],['Resultado',15],['Mtto / Reempl.',10],['Inicio',11],['Fin prog.',11],['Estado trabajo',14]]), ...rows.map(({u,e}) => {
+      const c = e ? calc(e) : null; const r = c ? RES[c.res] : RES.pendiente; const p = e?.programa || {}, pi = progInfo(p);
+      return [C(u.nombre,{bold:true}), C(u.tipo), C(e ? fmt(e.fecha) : '—'), C(r.l,{bold:true,color:r.hex}), C(c ? `${c.mtto} / ${c.reemp}` : '—'),
+        C(p.inicio ? fmt(p.inicio) : '—'), C(p.fin ? fmt(p.fin) : '—'), C(e ? pi.st : '—',{bold:pi.late,color:pi.late ? 'C62828' : undefined})];
+    })]),
+    H('Lista de trabajos para mantenimiento profundo', 2),
+    trabajos.length ? T([HEAD([['Unidad',22],['Elemento',26],['Acción',18],['Observación',34]]), ...trabajos.map(t =>
+      [C(`${t.u.tipo} ${t.u.nombre}`,{bold:true}), C(t.it.l), C(ESTADOS[t.v.estado].l,{bold:true,color:ESTADOS[t.v.estado].hex}), C(t.v.obs || '—')])]) : P('Sin hallazgos registrados.'),
+  ];
+  rows.forEach(({e}) => { if (e){ ch.push(new D.Paragraph({children:[new D.PageBreak()]})); ch.push(...fichaBlocks(e)); } });
+  await download(makeDoc(ch), `Consolidado Levantamiento Oasis y Balinesas BREPC ${today()}.docx`);
+}
+
+/* ================== EXPORTAR PDF (imprimir) ================== */
+function fichaHTML(e){
+  const u = unitById(e.unidad_id), c = calc(e), r = RES[c.res];
+  let h = `${logoHTML()}<h1>${u.tipo === 'Oasis' ? 'OASIS' : 'CAMA BALINESA'} ${esc(u.nombre.toUpperCase())}</h1>
+  <table><tr><td><b>Hotel</b></td><td>${PROPIEDAD}</td><td><b>Director General</b></td><td>${esc(e.director || '—')}</td></tr>
+  <tr><td><b>Unidad</b></td><td><b>${esc(u.nombre)}</b></td><td><b>Fecha levantamiento</b></td><td>${fmt(e.fecha)}</td></tr>
+  <tr><td><b>Tipo</b></td><td>${u.tipo === 'Oasis' ? 'Oasis — 2 pisos' : 'Balinesa — 1 piso'} (pago extra)</td><td><b>Ubicación</b></td><td>Lado ${u.zona}</td></tr>
+  <tr><td><b>Evaluador</b></td><td>${esc(e.evaluador)}</td><td><b>Resultado</b></td><td style="color:#${r.hex};font-weight:bold">${r.l}</td></tr></table>`;
+  SECTIONS[u.tipo].forEach(sec => {
+    h += `<h2>${sec.s}</h2><table><tr><th>Elemento</th><th>Estado</th><th>Observación</th></tr>` +
+      sec.items.map(it => { const v = e.items[it.k] || {}, st = ESTADOS[v.estado];
+        return `<tr><td><b>${it.l}</b></td><td style="color:#${st ? st.hex : '8A8A8A'};font-weight:bold">${st ? st.l : 'Sin calificar'}</td><td>${esc(v.obs || '—')}${(v.fotos||[]).map(f => `<br><img src="${f.data}">`).join('')}</td></tr>`; }).join('') + '</table>';
+  });
+  const p = e.programa || {}, pi = progInfo(p);
+  h += `<h2>Programa de trabajo</h2><table>
+    <tr><td><b>Fecha de inicio</b></td><td>${p.inicio ? fmt(p.inicio) : '—'}</td><td><b>Fecha fin programada</b></td><td>${p.fin ? fmt(p.fin) : '—'}</td></tr>
+    <tr><td><b>Tiempo de trabajo</b></td><td>${pi.dias ? pi.dias + ' día(s)' : '—'}</td><td><b>Responsable</b></td><td>${esc(p.responsable || '—')}</td></tr>
+    <tr><td><b>Estado del trabajo</b></td><td style="font-weight:bold;color:${pi.late ? '#C62828' : '#1F3864'}">${pi.st}</td><td><b>Fecha real de término</b></td><td>${p.real ? fmt(p.real) : '—'}</td></tr>
+    <tr><td><b>Notas</b></td><td colspan="3">${esc(p.notas || '—')}</td></tr></table>`;
+  h += `<h2>Observaciones generales</h2><p>${esc(e.obs_general || '—')}</p>${(e.fotos_general||[]).map(f => `<img src="${f.data}">`).join('')}`;
+  return h;
+}
+function logoHTML(){ return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><img class="logo" src="${LOGO}"><span style="color:#B08D3E;font-size:12px">GRUPO MARTINÓN · ${PROPIEDAD}</span></div>`; }
+function printHTML(h){ document.getElementById('print').innerHTML = h; setTimeout(() => window.print(), 300); }
+function exportEntryPDF(id){ printHTML(fichaHTML(entries.find(x => x.id === id))); }
+function exportConsolidadoPDF(){
+  const {rows, trabajos} = consolidadoData();
+  if (!rows.some(r => r.e)){ alert('Aún no hay levantamientos.'); return; }
+  let h = `${logoHTML()}<h1>LEVANTAMIENTO OASIS Y CAMAS BALINESAS — BREPC</h1><p><i>Consolidado al ${fmt(today())}</i><br><b>Hotel:</b> ${PROPIEDAD} · <b>Director General:</b> ${esc(localStorage.getItem('brepc_camas_director') || DIRECTOR_DEFAULT)}</p>
+  <h2>Resumen por unidad</h2><table><tr><th>Unidad</th><th>Tipo</th><th>Fecha lev.</th><th>Resultado</th><th>Mtto / Reempl.</th><th>Inicio</th><th>Fin prog.</th><th>Estado trabajo</th></tr>` +
+  rows.map(({u,e}) => { const c = e ? calc(e) : null, r = c ? RES[c.res] : RES.pendiente, p = e?.programa || {}, pi = progInfo(p);
+    return `<tr><td><b>${esc(u.nombre)}</b></td><td>${u.tipo}</td><td>${e ? fmt(e.fecha) : '—'}</td><td style="color:#${r.hex};font-weight:bold">${r.l}</td><td>${c ? c.mtto + ' / ' + c.reemp : '—'}</td><td>${p.inicio ? fmt(p.inicio) : '—'}</td><td>${p.fin ? fmt(p.fin) : '—'}</td><td style="${pi.late ? 'color:#C62828;font-weight:bold' : ''}">${e ? pi.st : '—'}</td></tr>`; }).join('') +
+  `</table><h2>Lista de trabajos para mantenimiento profundo</h2>` +
+  (trabajos.length ? '<table><tr><th>Unidad</th><th>Elemento</th><th>Acción</th><th>Observación</th></tr>' + trabajos.map(t =>
+    `<tr><td><b>${t.u.tipo} ${esc(t.u.nombre)}</b></td><td>${t.it.l}</td><td style="color:#${ESTADOS[t.v.estado].hex};font-weight:bold">${ESTADOS[t.v.estado].l}</td><td>${esc(t.v.obs || '—')}</td></tr>`).join('') + '</table>' : '<p>Sin hallazgos registrados.</p>');
+  rows.forEach(({e}) => { if (e) h += '<div class="pb">' + fichaHTML(e) + '</div>'; });
+  printHTML(h);
+}
+
+/* ================== UTILIDADES / INICIO ================== */
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function fmt(d){ if (!d) return ''; const [y,m,dd] = d.slice(0,10).split('-'); return `${dd}/${m}/${y}`; }
+function renderAll(){ renderResumen(); if (!document.getElementById('v-hist').classList.contains('hide')) renderHist(); }
+
+document.getElementById('hdrLogo').src = LOGO;
+function paintHdr(){ const d = localStorage.getItem('brepc_camas_director') || DIRECTOR_DEFAULT; document.getElementById('hdrDirector').textContent = d ? 'Director General: ' + d : ''; }
+loadLocal(); fillUnitSelect(); newForm(); renderResumen(); paintHdr(); pull();
+</script>
+</body>
+</html>
