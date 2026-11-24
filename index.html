@@ -78,7 +78,7 @@ textarea{min-height:44px;resize:vertical}
 </head>
 <body>
 <header>
-  <span id="sync">…</span>
+  <span id="sync">…</span><span id="ver" style="float:right;clear:right;font-size:11px;color:#e6d3a8;margin-top:4px">v3 · 24-nov</span>
   <div class="hdr">
     <img id="hdrLogo" alt="Grupo Martinón">
     <div>
@@ -160,7 +160,7 @@ textarea{min-height:44px;resize:vertical}
       <div class="thumbs" id="th-_general"></div>
     </div>
     <div class="sticky-save">
-      <button class="btn light" onclick="newForm()">Limpiar</button>
+      <button class="btn light" onclick="if(confirm('¿Limpiar el formulario? Se borra lo que no hayas guardado.')){clearDraft();newForm();}">Limpiar</button>
       <button class="btn gold" onclick="saveForm()">Guardar levantamiento</button>
     </div>
   </section>
@@ -328,10 +328,11 @@ async function pull(){
   entries = [...map.values()];
   saveLocal(); setSync('✓ Sincronizado'); renderAll();
 }
+let lastPushError = '';
 async function push(e){
-  if (!sb) return false;
-  const {error} = await sb.from(TABLE).upsert(toRow(e));
-  return !error;
+  if (!sb){ lastPushError = 'sin conexión a Supabase'; return false; }
+  try { const {error} = await sb.from(TABLE).upsert(toRow(e)); lastPushError = error ? (error.message || String(error)) : ''; return !error; }
+  catch(err){ lastPushError = err.message || String(err); return false; }
 }
 async function syncNow(){ await pull(); }
 
@@ -484,30 +485,72 @@ function photoBtns(k){
   <label class="photo-btn">🖼 Galería (varias)<input type="file" accept="image/*" multiple onchange="addPhotos(event,'${k}')"></label>`;
 }
 function slot(k){ if (k === '_general') return cur.fotos_general; cur.items[k] = cur.items[k] || {}; cur.items[k].fotos = cur.items[k].fotos || []; return cur.items[k].fotos; }
-function setEstado(k, st){ cur.items[k] = cur.items[k] || {}; cur.items[k].estado = cur.items[k].estado === st ? null : st; const y = window.scrollY; renderItems(); window.scrollTo(0,y); }
-function setObs(k, v){ cur.items[k] = cur.items[k] || {}; cur.items[k].obs = v; }
+function setEstado(k, st){ cur.items[k] = cur.items[k] || {}; cur.items[k].estado = cur.items[k].estado === st ? null : st; saveDraft(); const y = window.scrollY; renderItems(); window.scrollTo(0,y); }
+function setObs(k, v){ cur.items[k] = cur.items[k] || {}; cur.items[k].obs = v; saveDraft(); }
 function renderThumbs(k){
   const el = document.getElementById('th-'+k); if (!el) return;
   const arr = k === '_general' ? cur.fotos_general : (cur.items[k]?.fotos || []);
   el.innerHTML = arr.map((f,i) => `<div><img src="${f.data}"><b onclick="rmPhoto('${k}',${i})">×</b></div>`).join('') +
     (arr.length ? `<span style="font-size:12px;color:#666;align-self:center">${arr.length} foto(s)</span>` : '');
 }
-function rmPhoto(k,i){ slot(k).splice(i,1); renderThumbs(k); }
+function rmPhoto(k,i){ slot(k).splice(i,1); renderThumbs(k); saveDraft(); }
 async function addPhotos(ev, k){
-  for (const file of ev.target.files){ try { slot(k).push(await compress(file)); } catch(e){ alert('No se pudo leer una imagen.'); } }
-  ev.target.value = ''; renderThumbs(k);
+  const files = [...(ev.target.files || [])]; ev.target.value = '';
+  if (!files.length) return;
+  const th = document.getElementById('th-'+k);
+  if (th) th.insertAdjacentHTML('beforeend', '<span id="proc-'+k+'" style="font-size:12px;color:var(--gold);align-self:center">Procesando foto(s)…</span>');
+  let fail = [];
+  for (const file of files){
+    try { slot(k).push(await compress(file)); }
+    catch(e){ fail.push(file.name || 'foto'); }
+  }
+  renderThumbs(k); saveDraft();
+  if (fail.length) alert('No se pudo leer ' + fail.length + ' foto(s): ' + fail.join(', ') +
+    '.\nSi es formato HEIC/HEIF, cambia la cámara a JPG o vuelve a tomarla con el botón "Tomar foto".');
 }
-function compress(file){
+// Reduce la foto a máx. 1000 px en JPG. Usa createImageBitmap (menos memoria en el celular) y si no, <img> con URL temporal.
+async function compress(file){
+  const max = 1000;
+  const draw = (src, W, H) => { let w = W, h = H;
+    if (w > max || h > max){ const s = max/Math.max(w,h); w = Math.round(w*s); h = Math.round(h*s); }
+    const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(src,0,0,w,h);
+    const data = c.toDataURL('image/jpeg', 0.55); c.width = c.height = 0;
+    if (!data || data.length < 100) throw new Error('vacía');
+    return {data, w, h}; };
+  if (window.createImageBitmap){
+    try { const bmp = await createImageBitmap(file, {imageOrientation:'from-image'}); const r = draw(bmp, bmp.width, bmp.height); bmp.close && bmp.close(); return r; } catch(e){}
+  }
   return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => { const img = new Image();
-      img.onload = () => { const max = 1000; let w = img.width, h = img.height;
-        if (w > max || h > max){ const s = max/Math.max(w,h); w = Math.round(w*s); h = Math.round(h*s); }
-        const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(img,0,0,w,h);
-        res({data: c.toDataURL('image/jpeg', 0.55), w, h}); };
-      img.onerror = rej; img.src = r.result; };
-    r.onerror = rej; r.readAsDataURL(file);
+    const url = URL.createObjectURL(file); const img = new Image();
+    img.onload = () => { try { res(draw(img, img.naturalWidth, img.naturalHeight)); } catch(e){ rej(e); } URL.revokeObjectURL(url); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('formato')); };
+    img.src = url;
   });
+}
+/* Borrador automático: si el celular recarga la página al abrir la cámara, no se pierde lo llenado */
+let draftTimer = null;
+function readHeader(){
+  if (!cur) return;
+  cur.unidad_id = document.getElementById('f-unidad').value || cur.unidad_id;
+  cur.fecha = document.getElementById('f-fecha').value; cur.evaluador = document.getElementById('f-evaluador').value;
+  cur.director = document.getElementById('f-director').value; cur.obs_general = document.getElementById('f-obs').value;
+  cur.programa = readProg();
+}
+function saveDraft(){
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(() => { try { readHeader(); idbSet('draft', JSON.parse(JSON.stringify(cur))).catch(() => {}); } catch(e){} }, 400);
+}
+function clearDraft(){ clearTimeout(draftTimer); idbSet('draft', null).catch(() => {}); }
+function draftHasContent(d){ return d && (Object.values(d.items || {}).some(v => v && (v.estado || v.obs || (v.fotos && v.fotos.length))) || (d.fotos_general && d.fotos_general.length) || d.obs_general); }
+async function restoreDraft(){
+  try { const d = await idbGet('draft');
+    if (draftHasContent(d)){
+      const u = unitById(d.unidad_id); const nf = Object.values(d.items||{}).reduce((a,v) => a + ((v && v.fotos) ? v.fotos.length : 0), 0) + (d.fotos_general||[]).length;
+      if (confirm(`Hay un levantamiento sin guardar de ${u ? u.tipo + ' ' + u.nombre : 'una unidad'} (${nf} foto(s)).\n\n¿Recuperarlo?`)){
+        cur = d; document.getElementById('formTitle').textContent = d.id ? 'Editando levantamiento' : 'Nuevo levantamiento (recuperado)'; paintForm(); show('form'); return; }
+      clearDraft();
+    }
+  } catch(e){}
 }
 async function saveForm(){
   cur.unidad_id = document.getElementById('f-unidad').value;
@@ -530,11 +573,13 @@ async function saveForm(){
   if (!cur.id){ cur.id = uid(); cur.created_at = now; }
   cur.updated_at = now;
   const e = JSON.parse(JSON.stringify(cur));
+  setSync('Subiendo…');
   const ok = await push(e); if (!ok) e._pending = true;
+  if (!ok) alert('El levantamiento quedó guardado en este teléfono, pero no se pudo subir a Supabase (' + lastPushError + ').\nSe subirá solo al tocar "Sincronizar" en el Historial o al abrir la app con internet.');
   entries = entries.filter(x => x.id !== e.id); entries.push(e); saveLocal();
   setSync(sb ? (ok ? '✓ Sincronizado' : 'Pendiente de subir') : 'Solo local');
   const u = unitById(e.unidad_id);
-  lastSaved = e.id;
+  lastSaved = e.id; clearDraft();
   newForm(); show('resumen');
 }
 function readProg(){
@@ -734,7 +779,9 @@ function renderAll(){ renderResumen(); if (!document.getElementById('v-hist').cl
 
 document.getElementById('hdrLogo').src = LOGO;
 function paintHdr(){ const d = localStorage.getItem('brepc_camas_director') || DIRECTOR_DEFAULT; document.getElementById('hdrDirector').textContent = d ? 'Director General: ' + d : ''; }
-fillUnitSelect(); newForm(); paintHdr(); loadLocal().then(() => { renderResumen(); pull(); });
+fillUnitSelect(); newForm(); paintHdr();
+['f-fecha','f-evaluador','f-director','f-obs','p-inicio','p-fin','p-resp','p-estado','p-real','p-notas'].forEach(id => document.getElementById(id).addEventListener('input', saveDraft));
+loadLocal().then(async () => { renderResumen(); await restoreDraft(); pull(); });
 </script>
 </body>
 </html>
