@@ -193,14 +193,25 @@ try { if (!SUPABASE_ANON_KEY.startsWith('PEGAR')) sb = supabase.createClient(SUP
 
 /* ================== CATÁLOGO ================== */
 function slug(s){return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
+// [nombre visible, tipo, lado, id fijo (opcional)]. El id NO se cambia aunque cambie el nombre,
+// así los levantamientos ya guardados siguen ligados a su unidad.
 const UNITS = [
   ['Galeras','Oasis','Sensory'],['Esmeralda','Oasis','Sensory'],['Limón','Oasis','Sensory'],
   ['Haitises','Oasis','Sensory'],['Bahía de las Águilas','Oasis','Sensory'],
-  ['Ermitaño','Oasis','Sublime'],['El Valle','Oasis','Sublime'],['Punto Rusia','Oasis','Sublime'],['Roca Chica','Oasis','Sublime'],
-  ['Son','Balinesa','Sensory'],['Bachata','Balinesa','Sensory'],['Perico Ripiao','Balinesa','Sensory'],
-  ['Salsa','Balinesa','Sensory'],['Reguetón','Balinesa','Sensory'],['Rumba','Balinesa','Sensory'],
-  ['Bolero','Balinesa','Sublime'],['Merengue','Balinesa','Sublime']
-].map(([n,t,z]) => ({id: slug(t+'-'+n), nombre:n, tipo:t, zona:z}));
+  ['Ermitaño','Oasis','Sublime'],['El Valle','Oasis','Sublime'],['Punto Rusia','Oasis','Sublime'],
+  ['Boca Rica','Oasis','Sublime','oasis-roca-chica'],
+  ['Rincón','Oasis',''],
+  ['1 · Rumba','Balinesa','Sensory','balinesa-rumba'],
+  ['2 · Salsa','Balinesa','Sensory','balinesa-salsa'],
+  ['3 · Reguetón','Balinesa','Sensory','balinesa-regueton'],
+  ['4 · Perico Ripiao','Balinesa','Sensory','balinesa-perico-ripiao'],
+  ['5 · Bachata','Balinesa','Sensory','balinesa-bachata'],
+  ['6 · Son','Balinesa','Sensory','balinesa-son'],
+  ['7 · Bolero','Balinesa','Sublime','balinesa-bolero'],
+  ['8 · Sin nombre (pendiente)','Balinesa','Sublime','balinesa-8'],
+  ['9 · Merengue','Balinesa','Sublime','balinesa-merengue']
+].map(([n,t,z,id]) => ({id: id || slug(t+'-'+n), nombre:n, tipo:t, zona:z}));
+const lado = u => u.zona ? 'Lado ' + u.zona : 'Ubicación por confirmar';
 const unitById = id => UNITS.find(u => u.id === id);
 
 const COMUNES = [
@@ -325,9 +336,9 @@ function renderResumen(){
   let h = '';
   ['Oasis','Balinesa'].forEach(t => {
     h += `<h3>${t === 'Oasis' ? 'Oasis (2 pisos)' : 'Camas Balinesas (1 piso)'}</h3>`;
-    ['Sensory','Sublime'].forEach(z => {
+    ['Sensory','Sublime',''].forEach(z => {
       const us = UNITS.filter(u => u.tipo === t && u.zona === z); if (!us.length) return;
-      h += `<div style="font-size:13px;color:#666;margin:6px 0">Lado ${z}</div><div class="grid">`;
+      h += `<div style="font-size:13px;color:#666;margin:6px 0">${lado({zona:z})}</div><div class="grid">`;
       us.forEach(u => {
         const l = latest(u.id); const c = l ? calc(l) : null; const r = c ? RES[c.res] : RES.pendiente;
         h += `<div class="unit" style="border-left-color:${r.c}" onclick="openUnit('${u.id}')">
@@ -364,7 +375,7 @@ function uid(){ return 'cb-' + Date.now().toString(36) + '-' + Math.random().toS
 function fillUnitSelect(){
   const s = document.getElementById('f-unidad');
   s.innerHTML = ['Oasis','Balinesa'].map(t => `<optgroup label="${t === 'Oasis' ? 'Oasis' : 'Camas Balinesas'}">` +
-    UNITS.filter(u => u.tipo === t).map(u => `<option value="${u.id}">${esc(u.nombre)} — Lado ${u.zona}</option>`).join('') + '</optgroup>').join('');
+    UNITS.filter(u => u.tipo === t).map(u => `<option value="${u.id}">${esc(u.nombre)} — ${lado(u)}</option>`).join('') + '</optgroup>').join('');
   s.onchange = () => { cur.unidad_id = s.value; renderItems(); };
   const hs = document.getElementById('h-unidad');
   hs.innerHTML = '<option value="">Todas</option>' + UNITS.map(u => `<option value="${u.id}">${u.tipo} — ${esc(u.nombre)}</option>`).join('');
@@ -401,7 +412,7 @@ function paintForm(){
 function renderItems(){
   const u = unitById(cur.unidad_id);
   document.getElementById('f-info').innerHTML =
-    `<b>${u.tipo === 'Oasis' ? 'Oasis — 2 pisos' : 'Cama Balinesa — 1 piso'}</b> · Lado ${u.zona} · Servicio de pago extra`;
+    `<b>${u.tipo === 'Oasis' ? 'Oasis — 2 pisos' : 'Cama Balinesa — 1 piso'}</b> · ${lado(u)} · Servicio de pago extra`;
   let h = '';
   SECTIONS[u.tipo].forEach((sec, si) => {
     h += `<h3${si === 0 ? ' style="margin-top:0"' : ''}>${sec.s}</h3>`;
@@ -508,7 +519,7 @@ function renderHist(){
     const u = unitById(e.unidad_id), c = calc(e), r = RES[c.res];
     return `<div class="card hist" style="border-left-color:${r.c}">
       <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
-        <div><b style="color:var(--navy)">${u.tipo} ${esc(u.nombre)}</b> <span style="color:#666;font-size:13px">· Lado ${u.zona}</span></div>
+        <div><b style="color:var(--navy)">${u.tipo} ${esc(u.nombre)}</b> <span style="color:#666;font-size:13px">· ${lado(u)}</span></div>
         <span class="badge" style="background:${r.c}">${r.l}</span></div>
       <div style="font-size:13px;color:#555;margin-top:4px">${fmt(e.fecha)} · ${esc(e.evaluador)} · ${c.ok} ok · ${c.mtto} mtto · ${c.reemp} reemplazo${c.pend ? ' · ' + c.pend + ' sin calificar' : ''}${e._pending ? ' · <b style="color:var(--reemp)">pendiente de subir</b>' : ''}</div>
       <div class="actions">
@@ -554,7 +565,7 @@ function fichaBlocks(e){
     T([
       [C('Hotel',{bold:true,fill:'EDE9E6',w:22}), C(PROPIEDAD,{w:28}), C('Director General',{bold:true,fill:'EDE9E6',w:20}), C(e.director || '—',{w:30})],
       [C('Unidad',{bold:true,fill:'EDE9E6'}), C(u.nombre,{bold:true}), C('Fecha levantamiento',{bold:true,fill:'EDE9E6'}), C(fmt(e.fecha))],
-      [C('Tipo',{bold:true,fill:'EDE9E6'}), C(u.tipo === 'Oasis' ? 'Oasis — 2 pisos (pago extra)' : 'Balinesa — 1 piso (pago extra)'), C('Ubicación',{bold:true,fill:'EDE9E6'}), C('Lado ' + u.zona)],
+      [C('Tipo',{bold:true,fill:'EDE9E6'}), C(u.tipo === 'Oasis' ? 'Oasis — 2 pisos (pago extra)' : 'Balinesa — 1 piso (pago extra)'), C('Ubicación',{bold:true,fill:'EDE9E6'}), C(lado(u))],
       [C('Evaluador',{bold:true,fill:'EDE9E6'}), C(e.evaluador), C('Resultado',{bold:true,fill:'EDE9E6'}), C(r.l,{bold:true,color:r.hex})]
     ]),
     P(`Buen estado: ${c.ok} · Requiere mtto: ${c.mtto} · Requiere reemplazo: ${c.reemp} · No aplica: ${c.na}${c.pend ? ' · Sin calificar: ' + c.pend : ''}`, {italics:true, color:'B08D3E', after:120}),
@@ -631,7 +642,7 @@ function fichaHTML(e){
   let h = `${logoHTML()}<h1>${u.tipo === 'Oasis' ? 'OASIS' : 'CAMA BALINESA'} ${esc(u.nombre.toUpperCase())}</h1>
   <table><tr><td><b>Hotel</b></td><td>${PROPIEDAD}</td><td><b>Director General</b></td><td>${esc(e.director || '—')}</td></tr>
   <tr><td><b>Unidad</b></td><td><b>${esc(u.nombre)}</b></td><td><b>Fecha levantamiento</b></td><td>${fmt(e.fecha)}</td></tr>
-  <tr><td><b>Tipo</b></td><td>${u.tipo === 'Oasis' ? 'Oasis — 2 pisos' : 'Balinesa — 1 piso'} (pago extra)</td><td><b>Ubicación</b></td><td>Lado ${u.zona}</td></tr>
+  <tr><td><b>Tipo</b></td><td>${u.tipo === 'Oasis' ? 'Oasis — 2 pisos' : 'Balinesa — 1 piso'} (pago extra)</td><td><b>Ubicación</b></td><td>${lado(u)}</td></tr>
   <tr><td><b>Evaluador</b></td><td>${esc(e.evaluador)}</td><td><b>Resultado</b></td><td style="color:#${r.hex};font-weight:bold">${r.l}</td></tr></table>`;
   SECTIONS[u.tipo].forEach(sec => {
     h += `<h2>${sec.s}</h2><table><tr><th>Elemento</th><th>Estado</th><th>Observación</th></tr>` +
