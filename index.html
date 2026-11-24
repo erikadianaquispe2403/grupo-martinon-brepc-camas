@@ -78,7 +78,7 @@ textarea{min-height:44px;resize:vertical}
 </head>
 <body>
 <header>
-  <span id="sync">…</span><span id="ver" style="float:right;clear:right;font-size:11px;color:#e6d3a8;margin-top:4px">v3 · 24-nov</span>
+  <span id="sync">…</span><span id="ver" style="float:right;clear:right;font-size:11px;color:#e6d3a8;margin-top:4px">v4 · 24-nov</span>
   <div class="hdr">
     <img id="hdrLogo" alt="Grupo Martinón">
     <div>
@@ -187,6 +187,7 @@ textarea{min-height:44px;resize:vertical}
 const SUPABASE_URL = 'https://wwnuiriqjbiaggmdrlrk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_5Xh8VJ78xQOhfxRR-GqyLw_LdDnTlZc'; // ← pegar la anon key del proyecto Supabase
 const TABLE = 'brepc_camas_levantamiento';
+const BUCKET = 'brepc-camas'; // Supabase Storage: las fotos se suben aquí, una por una
 const LS_KEY = 'brepc_camas_levantamiento_v1';
 const PROPIEDAD = 'BREPC — Breathless Punta Cana';
 const LOGO = 'data:image/jpeg;base64,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';
@@ -329,10 +330,44 @@ async function pull(){
   saveLocal(); setSync('✓ Sincronizado'); renderAll();
 }
 let lastPushError = '';
+function allPhotos(e){ return [...Object.values(e.items || {}).flatMap(v => (v && v.fotos) || []), ...(e.fotos_general || [])]; }
+function dataUrlToBlob(u){ const b = atob(u.split(',')[1]); const a = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return new Blob([a], {type:'image/jpeg'}); }
+async function uploadPhotos(e){
+  const pend = allPhotos(e).filter(f => f.data && !f.url);
+  for (let i = 0; i < pend.length; i++){
+    const f = pend[i]; setSync(`Subiendo fotos ${i+1}/${pend.length}…`);
+    const path = `${e.id}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.jpg`;
+    let lastErr = null;
+    for (let t = 0; t < 3; t++){ // hasta 3 intentos por foto (datos móviles)
+      try { const {error} = await sb.storage.from(BUCKET).upload(path, dataUrlToBlob(f.data), {contentType:'image/jpeg', upsert:true});
+        if (!error){ lastErr = null; break; } lastErr = error; } catch(err){ lastErr = err; }
+      await new Promise(r => setTimeout(r, 1500));
+    }
+    if (lastErr) throw new Error('foto ' + (i+1) + ' de ' + pend.length + ': ' + (lastErr.message || lastErr));
+    f.url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl; f.path = path;
+    delete f.data; // ya está en la nube: se libera espacio en el teléfono
+  }
+}
 async function push(e){
   if (!sb){ lastPushError = 'sin conexión a Supabase'; return false; }
-  try { const {error} = await sb.from(TABLE).upsert(toRow(e)); lastPushError = error ? (error.message || String(error)) : ''; return !error; }
+  try {
+    await uploadPhotos(e);
+    setSync('Guardando…');
+    const {error} = await sb.from(TABLE).upsert(toRow(e)); lastPushError = error ? (error.message || String(error)) : ''; return !error; }
   catch(err){ lastPushError = err.message || String(err); return false; }
+}
+const photoSrc = f => f.data || f.url;
+// Para el Word: trae la foto de la nube cuando ya no está en el teléfono
+async function withData(e){
+  const c = JSON.parse(JSON.stringify(e));
+  for (const f of allPhotos(c)){
+    if (!f.data && f.url){
+      try { const b = await (await fetch(f.url)).blob();
+        f.data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); }); }
+      catch(err){ f._skip = true; }
+    }
+  }
+  return c;
 }
 async function syncNow(){ await pull(); }
 
@@ -490,7 +525,7 @@ function setObs(k, v){ cur.items[k] = cur.items[k] || {}; cur.items[k].obs = v; 
 function renderThumbs(k){
   const el = document.getElementById('th-'+k); if (!el) return;
   const arr = k === '_general' ? cur.fotos_general : (cur.items[k]?.fotos || []);
-  el.innerHTML = arr.map((f,i) => `<div><img src="${f.data}"><b onclick="rmPhoto('${k}',${i})">×</b></div>`).join('') +
+  el.innerHTML = arr.map((f,i) => `<div><img src="${photoSrc(f)}"><b onclick="rmPhoto('${k}',${i})">×</b></div>`).join('') +
     (arr.length ? `<span style="font-size:12px;color:#666;align-self:center">${arr.length} foto(s)</span>` : '');
 }
 function rmPhoto(k,i){ slot(k).splice(i,1); renderThumbs(k); saveDraft(); }
@@ -627,7 +662,9 @@ function renderHist(){
 }
 async function delEntry(id){
   if (!confirm('¿Eliminar este levantamiento? No se puede deshacer.')) return;
-  if (sb){ const {error} = await sb.from(TABLE).delete().eq('id', id); if (error){ alert('No se pudo eliminar en Supabase (sin conexión). Intenta de nuevo con conexión.'); return; } }
+  if (sb){ const {error} = await sb.from(TABLE).delete().eq('id', id); if (error){ alert('No se pudo eliminar en Supabase (sin conexión). Intenta de nuevo con conexión.'); return; }
+    const en = entries.find(e => e.id === id); const paths = en ? allPhotos(en).map(f => f.path).filter(Boolean) : [];
+    if (paths.length) sb.storage.from(BUCKET).remove(paths).catch(() => {}); }
   entries = entries.filter(e => e.id !== id); saveLocal(); renderHist(); renderResumen();
 }
 
@@ -651,7 +688,7 @@ function imgPara(f, maxW = 230){
   const s = Math.min(1, maxW / f.w);
   return new D.ImageRun({data:b64ToBytes(f.data), transformation:{width:Math.round(f.w*s), height:Math.round(f.h*s)}});
 }
-function photosBlock(fotos){ return fotos && fotos.length ? [new D.Paragraph({spacing:{after:120}, children:fotos.flatMap((f,i) => i ? [new D.TextRun('  '), imgPara(f)] : [imgPara(f)])})] : []; }
+function photosBlock(fotos){ fotos = (fotos || []).filter(f => f.data && !f._skip); return fotos.length ? [new D.Paragraph({spacing:{after:120}, children:fotos.flatMap((f,i) => i ? [new D.TextRun('  '), imgPara(f)] : [imgPara(f)])})] : []; }
 
 function fichaBlocks(e){
   const u = unitById(e.unidad_id), c = calc(e), r = RES[c.res];
@@ -699,7 +736,7 @@ async function download(doc, name){
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 async function exportEntryWord(id){
-  const e = entries.find(x => x.id === id); const u = unitById(e.unidad_id);
+  const e = await withData(entries.find(x => x.id === id)); const u = unitById(e.unidad_id);
   await download(makeDoc([P('LEVANTAMIENTO DE MANTENIMIENTO', {bold:true, color:'1F3864', size:22, font:'Felix Titling'}), ...fichaBlocks(e)]),
     `Levantamiento ${u.tipo} ${u.nombre} BREPC ${e.fecha}.docx`);
 }
@@ -729,7 +766,7 @@ async function exportConsolidadoWord(){
     trabajos.length ? T([HEAD([['Unidad',22],['Elemento',26],['Acción',18],['Observación',34]]), ...trabajos.map(t =>
       [C(`${t.u.tipo} ${t.u.nombre}`,{bold:true}), C(t.it.l), C(ESTADOS[t.v.estado].l,{bold:true,color:ESTADOS[t.v.estado].hex}), C(t.v.obs || '—')])]) : P('Sin hallazgos registrados.'),
   ];
-  rows.forEach(({e}) => { if (e){ ch.push(new D.Paragraph({children:[new D.PageBreak()]})); ch.push(...fichaBlocks(e)); } });
+  for (const {e} of rows){ if (e){ ch.push(new D.Paragraph({children:[new D.PageBreak()]})); ch.push(...fichaBlocks(await withData(e))); } }
   await download(makeDoc(ch), `Consolidado Levantamiento Oasis y Balinesas BREPC ${today()}.docx`);
 }
 
@@ -744,7 +781,7 @@ function fichaHTML(e){
   SECTIONS[u.tipo].forEach(sec => {
     h += `<h2>${sec.s}</h2><table><tr><th>Elemento</th><th>Estado</th><th>Observación</th></tr>` +
       sec.items.map(it => { const v = e.items[it.k] || {}, st = ESTADOS[v.estado];
-        return `<tr><td><b>${it.l}</b></td><td style="color:#${st ? st.hex : '8A8A8A'};font-weight:bold">${st ? st.l : 'Sin calificar'}</td><td>${esc(v.obs || '—')}${(v.fotos||[]).map(f => `<br><img src="${f.data}">`).join('')}</td></tr>`; }).join('') + '</table>';
+        return `<tr><td><b>${it.l}</b></td><td style="color:#${st ? st.hex : '8A8A8A'};font-weight:bold">${st ? st.l : 'Sin calificar'}</td><td>${esc(v.obs || '—')}${(v.fotos||[]).map(f => `<br><img src="${photoSrc(f)}">`).join('')}</td></tr>`; }).join('') + '</table>';
   });
   const p = e.programa || {}, pi = progInfo(p);
   h += `<h2>Programa de trabajo</h2><table>
@@ -752,11 +789,15 @@ function fichaHTML(e){
     <tr><td><b>Tiempo de trabajo</b></td><td>${pi.dias ? pi.dias + ' día(s)' : '—'}</td><td><b>Responsable</b></td><td>${esc(p.responsable || '—')}</td></tr>
     <tr><td><b>Estado del trabajo</b></td><td style="font-weight:bold;color:${pi.late ? '#C62828' : '#1F3864'}">${pi.st}</td><td><b>Fecha real de término</b></td><td>${p.real ? fmt(p.real) : '—'}</td></tr>
     <tr><td><b>Notas</b></td><td colspan="3">${esc(p.notas || '—')}</td></tr></table>`;
-  h += `<h2>Observaciones generales</h2><p>${esc(e.obs_general || '—')}</p>${(e.fotos_general||[]).map(f => `<img src="${f.data}">`).join('')}`;
+  h += `<h2>Observaciones generales</h2><p>${esc(e.obs_general || '—')}</p>${(e.fotos_general||[]).map(f => `<img src="${photoSrc(f)}">`).join('')}`;
   return h;
 }
 function logoHTML(){ return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><img class="logo" src="${LOGO}"><span style="color:#B08D3E;font-size:12px">GRUPO MARTINÓN · ${PROPIEDAD}</span></div>`; }
-function printHTML(h){ document.getElementById('print').innerHTML = h; setTimeout(() => window.print(), 300); }
+async function printHTML(h){
+  const el = document.getElementById('print'); el.innerHTML = h;
+  await Promise.all([...el.querySelectorAll('img')].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; setTimeout(r, 8000); })));
+  setTimeout(() => window.print(), 200);
+}
 function exportEntryPDF(id){ printHTML(fichaHTML(entries.find(x => x.id === id))); }
 function exportConsolidadoPDF(){
   const {rows, trabajos} = consolidadoData();
