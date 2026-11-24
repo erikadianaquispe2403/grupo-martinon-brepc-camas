@@ -78,7 +78,7 @@ textarea{min-height:44px;resize:vertical}
 </head>
 <body>
 <header>
-  <span id="sync">…</span><span id="ver" style="float:right;clear:right;font-size:11px;color:#e6d3a8;margin-top:4px">v4 · 24-nov</span>
+  <span id="sync">…</span><span id="ver" style="float:right;clear:right;font-size:11px;color:#e6d3a8;margin-top:4px">v5 · 24-nov</span>
   <div class="hdr">
     <img id="hdrLogo" alt="Grupo Martinón">
     <div>
@@ -203,10 +203,9 @@ function slug(s){return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().
 // así los levantamientos ya guardados siguen ligados a su unidad.
 const UNITS = [
   ['Galeras','Oasis','Sensory'],['Esmeralda','Oasis','Sensory'],['Limón','Oasis','Sensory'],
-  ['Haitises','Oasis','Sensory'],['Bahía de las Águilas','Oasis','Sensory'],
+  ['Rincón','Oasis','Sensory','oasis-haitises'],['Bahía de las Águilas','Oasis','Sensory'],
   ['Ermitaño','Oasis','Sublime'],['El Valle','Oasis','Sublime'],['Punto Rusia','Oasis','Sublime'],
   ['Boca Rica','Oasis','Sublime','oasis-roca-chica'],
-  ['Rincón','Oasis',''],
   ['1 · Rumba','Balinesa','Sensory','balinesa-rumba'],
   ['2 · Salsa','Balinesa','Sensory','balinesa-salsa'],
   ['3 · Reguetón','Balinesa','Sensory','balinesa-regueton'],
@@ -214,11 +213,14 @@ const UNITS = [
   ['5 · Bachata','Balinesa','Sensory','balinesa-bachata'],
   ['6 · Son','Balinesa','Sensory','balinesa-son'],
   ['7 · Bolero','Balinesa','Sublime','balinesa-bolero'],
-  ['8 · Sin nombre (pendiente)','Balinesa','Sublime','balinesa-8'],
+  ['8 · Areito','Balinesa','Sublime','balinesa-8'],
   ['9 · Merengue','Balinesa','Sublime','balinesa-merengue']
 ].map(([n,t,z,id]) => ({id: id || slug(t+'-'+n), nombre:n, tipo:t, zona:z}));
 const lado = u => u.zona ? 'Lado ' + u.zona : 'Ubicación por confirmar';
-const unitById = id => UNITS.find(u => u.id === id);
+// Unidades fusionadas: lo que se haya guardado como "Rincón" (oasis-rincon) pasa al Oasis Rincón (antes Haitises)
+const ALIAS = {'oasis-rincon':'oasis-haitises'};
+const normId = id => ALIAS[id] || id;
+const unitById = id => UNITS.find(u => u.id === normId(id));
 
 const COMUNES = [
   {k:'colchon', l:'Colchón'},
@@ -272,11 +274,13 @@ async function idbGet(k){ const db = await idb(); return new Promise((res, rej) 
 async function idbSet(k, v){ const db = await idb(); return new Promise((res, rej) => { const t = db.transaction('kv','readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = () => res(); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); }); }
 async function loadLocal(){
   try { entries = (await idbGet(LS_KEY)) || []; } catch(e){ entries = []; }
+  entries.forEach(e => e.unidad_id = normId(e.unidad_id));
   // migrar datos de la versión anterior (localStorage) y liberar ese espacio
   try { const old = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
     if (old && old.length){ const ids = new Set(entries.map(e => e.id)); old.forEach(e => { if (!ids.has(e.id)) entries.push(e); }); await idbSet(LS_KEY, entries); }
     localStorage.removeItem(LS_KEY);
   } catch(e){}
+  entries.forEach(e => e.unidad_id = normId(e.unidad_id));
 }
 let warnedFull = false;
 function saveLocal(){
@@ -310,7 +314,7 @@ function toRow(e){
     fotos_general:e.fotos_general, created_at:e.created_at, updated_at:e.updated_at};
 }
 function fromRow(r){
-  return {id:r.id, director:r.director||'', programa:r.programa||{}, unidad_id:r.unidad_id, fecha:r.fecha, evaluador:r.evaluador, items:r.items||{},
+  return {id:r.id, director:r.director||'', programa:r.programa||{}, unidad_id:normId(r.unidad_id), fecha:r.fecha, evaluador:r.evaluador, items:r.items||{},
     obs_general:r.obs_general||'', fotos_general:r.fotos_general||[], created_at:r.created_at, updated_at:r.updated_at};
 }
 function setSync(t){ document.getElementById('sync').textContent = t; }
