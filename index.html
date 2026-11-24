@@ -78,7 +78,7 @@ textarea{min-height:44px;resize:vertical}
 </head>
 <body>
 <header>
-  <span id="sync">…</span><span id="ver" style="float:right;clear:right;font-size:11px;color:#e6d3a8;margin-top:4px">v5 · 24-nov</span>
+  <span id="sync">…</span><span id="ver" style="float:right;clear:right;font-size:11px;color:#e6d3a8;margin-top:4px">v6 · 24-nov</span>
   <div class="hdr">
     <img id="hdrLogo" alt="Grupo Martinón">
     <div>
@@ -742,7 +742,7 @@ async function download(doc, name){
 async function exportEntryWord(id){
   const e = await withData(entries.find(x => x.id === id)); const u = unitById(e.unidad_id);
   await download(makeDoc([P('LEVANTAMIENTO DE MANTENIMIENTO', {bold:true, color:'1F3864', size:22, font:'Felix Titling'}), ...fichaBlocks(e)]),
-    `Levantamiento ${u.tipo} ${u.nombre} BREPC ${e.fecha}.docx`);
+    fileName(e) + '.docx');
 }
 function consolidadoData(){
   const rows = rankRows().map(x => ({u:x.u, e:x.l}));
@@ -771,7 +771,7 @@ async function exportConsolidadoWord(){
       [C(`${t.u.tipo} ${t.u.nombre}`,{bold:true}), C(t.it.l), C(ESTADOS[t.v.estado].l,{bold:true,color:ESTADOS[t.v.estado].hex}), C(t.v.obs || '—')])]) : P('Sin hallazgos registrados.'),
   ];
   for (const {e} of rows){ if (e){ ch.push(new D.Paragraph({children:[new D.PageBreak()]})); ch.push(...fichaBlocks(await withData(e))); } }
-  await download(makeDoc(ch), `Consolidado Levantamiento Oasis y Balinesas BREPC ${today()}.docx`);
+  await download(makeDoc(ch), consolidadoName() + '.docx');
 }
 
 /* ================== EXPORTAR PDF (imprimir) ================== */
@@ -797,12 +797,20 @@ function fichaHTML(e){
   return h;
 }
 function logoHTML(){ return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><img class="logo" src="${LOGO}"><span style="color:#B08D3E;font-size:12px">GRUPO MARTINÓN · ${PROPIEDAD}</span></div>`; }
-async function printHTML(h){
+async function printHTML(h, name){
   const el = document.getElementById('print'); el.innerHTML = h;
+  const prevTitle = document.title; if (name) document.title = name; // Chrome usa el título como nombre del PDF
+  const restore = () => { document.title = prevTitle; window.removeEventListener('afterprint', restore); };
+  window.addEventListener('afterprint', restore); setTimeout(restore, 60000);
   await Promise.all([...el.querySelectorAll('img')].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; setTimeout(r, 8000); })));
   setTimeout(() => window.print(), 200);
 }
-function exportEntryPDF(id){ printHTML(fichaHTML(entries.find(x => x.id === id))); }
+function exportEntryPDF(id){ const e = entries.find(x => x.id === id); printHTML(fichaHTML(e), fileName(e)); }
+// Nombre del archivo: "OASIS Galeras - 24-11-2026" / "CAMA BALINESA 1 Rumba - 24-11-2026"
+function cleanName(t){ return t.replace(/·/g,' ').replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim(); }
+function fileName(e){ const u = unitById(e.unidad_id);
+  return cleanName(`${u.tipo === 'Oasis' ? 'OASIS' : 'CAMA BALINESA'} ${u.nombre} - ${fmt(e.fecha).replace(/\//g,'-')}`); }
+function consolidadoName(){ return cleanName(`CONSOLIDADO OASIS Y CAMAS BALINESAS BREPC - ${fmt(today()).replace(/\//g,'-')}`); }
 function exportConsolidadoPDF(){
   const {rows, trabajos} = consolidadoData();
   if (!rows.some(r => r.e)){ alert('Aún no hay levantamientos.'); return; }
@@ -814,7 +822,7 @@ function exportConsolidadoPDF(){
   (trabajos.length ? '<table><tr><th>Unidad</th><th>Elemento</th><th>Acción</th><th>Observación</th></tr>' + trabajos.map(t =>
     `<tr><td><b>${t.u.tipo} ${esc(t.u.nombre)}</b></td><td>${t.it.l}</td><td style="color:#${ESTADOS[t.v.estado].hex};font-weight:bold">${ESTADOS[t.v.estado].l}</td><td>${esc(t.v.obs || '—')}</td></tr>`).join('') + '</table>' : '<p>Sin hallazgos registrados.</p>');
   rows.forEach(({e}) => { if (e) h += '<div class="pb">' + fichaHTML(e) + '</div>'; });
-  printHTML(h);
+  printHTML(h, consolidadoName());
 }
 
 /* ================== UTILIDADES / INICIO ================== */
